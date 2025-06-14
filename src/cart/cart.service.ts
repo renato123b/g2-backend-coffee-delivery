@@ -48,19 +48,34 @@ export class CartService {
       throw new NotFoundException(`Cart with ID ${cartId} not found`);
     }
 
-    return {
-      id: cart.id,
-      items: cart.items.map((item) => ({
+    const items = cart.items.map((item) => {
+      const unitPrice = item.unitPrice.toNumber(); // Conversão segura
+      return {
         id: item.id,
         coffee: {
           id: item.coffee.id,
           name: item.coffee.name,
-          price: item.unitPrice,
+          price: unitPrice,
+          imageUrl: item.coffee.imageUrl,
         },
         quantity: item.quantity,
-        subtotal: item.unitPrice.toNumber() * item.quantity
+        unitPrice,
+        subtotal: unitPrice * item.quantity,
+      };
+    });
 
-      })),
+    const itemsTotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+    const shippingFee = 10; // ou algum cálculo condicional
+    const total = itemsTotal + shippingFee;
+    const uniqueCategories = [...new Set(cart.items.map(i => i.coffeeId))]; // Ajustar se desejar por tag/categoria real
+
+    return {
+      id: cart.id,
+      items,
+      itemsTotal,
+      uniqueCategories,
+      shippingFee,
+      total,
     };
   }
 
@@ -79,7 +94,6 @@ export class CartService {
       throw new NotFoundException(`Coffee with ID ${coffeeId} not found`);
     }
 
-    // Verifica se o item já está no carrinho
     const existingItem = await this.prisma.cartItem.findFirst({
       where: {
         cartId,
@@ -88,7 +102,6 @@ export class CartService {
     });
 
     if (existingItem) {
-      // Se já existir, atualiza a quantidade (até o limite de 5)
       const newQuantity = Math.min(existingItem.quantity + quantity, 5);
 
       return this.prisma.cartItem.update({
