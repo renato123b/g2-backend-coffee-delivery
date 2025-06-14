@@ -7,4 +7,4 @@ export class UpdateItemDto {
   @Max(5)
   @Type(() => Number)
   quantity: number;
-} 
+}

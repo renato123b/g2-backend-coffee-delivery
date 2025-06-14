@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,52 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model Coffee {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
   description String
-  price       Decimal    @db.Decimal(10, 2)
+  price       Decimal      @db.Decimal(10, 2)
   imageUrl    String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
-  // Relacionamentos incompleto
-  tags        
-  cartItems  // 
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tags        CoffeeTag[]      // Relacionamento muitos-para-muitos
+  cartItems   CartItem[]       // 1:N 
 }
 
 model Tag {
-  id        String      @id @default(uuid())
-  name      String      @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  
-  // Relacionamentos 
-  coffees   CoffeeTag[]
+  id        String       @id @default(uuid())
+  name      String       @unique
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  coffees   CoffeeTag[]       // muitos-para-muitos
 }
 
 model CoffeeTag {
   coffeeId  String
   tagId     String
-  // Relacionamentos aqui
+
+  coffee    Coffee   @relation(fields: [coffeeId], references: [id])
+  tag       Tag      @relation(fields: [tagId], references: [id])
+
+  @@id([coffeeId, tagId]) 
 }
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String?    // Opcional para usuários não autenticados
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  
-  // Relacionamentos incompleto
-  items     CartItem[]
+  id                 String     @id @default(uuid())
+  userId             String?    // Pode ou não estar associado a um usuário
+  status             String
+  status_payment     String
+  data_time_completed DateTime?
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  items              CartItem[]   // 1:N
 }
 
 model CartItem {
   id         String   @id @default(uuid())
-  quantity   Int
+  quantity   Int      @default(1)
   unitPrice  Decimal  @db.Decimal(10, 2)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
-  // Relacionamentos aqui
+
+  coffeeId   String
+  cartId     String
+
+  coffee     Coffee   @relation(fields: [coffeeId], references: [id])
+  cart       Cart     @relation(fields: [cartId], references: [id])
 }
